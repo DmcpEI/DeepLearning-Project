@@ -46,19 +46,17 @@ class Perceptron(LinearModel):
         y_i (scalar): the gold label for that example
         other arguments are ignored
         """
-
         # Compute scores
-        scores = np.dot(self.W, x_i)
+        scores = self.W.dot(x_i)
         # Predict the label
-        y_hat_n = np.argmax(scores)
+        y_hat = np.argmax(scores)
 
         # If prediction is incorrect
-        if y_hat_n != y_i:
+        if y_hat != y_i:
             # Update the weights for the true class (increase weights)
             self.W[y_i, :] += x_i
             # Update the weights for the predicted class (decrease weights)
-            self.W[y_hat_n, :] -= x_i
-
+            self.W[y_hat, :] -= x_i
 
 class LogisticRegression(LinearModel):
     def update_weight(self, x_i, y_i, learning_rate=0.001, l2_penalty=0.0, **kwargs):
@@ -67,25 +65,28 @@ class LogisticRegression(LinearModel):
         y_i: the gold label for that example
         learning_rate (float): keep it at the default value for your plots
         """
+        # Compute scores for all classes
+        scores = self.W.dot(x_i)
 
-        # Compute scores
-        scores = np.dot(self.W, x_i)
-        # Compute the softmax of the scores and get the probabilities
-        exp_scores = np.exp(scores)
-        probabilities = exp_scores / np.sum(exp_scores)
+        # Compute the probability scores according to the model
+        label_scores = np.expand_dims(scores, axis = 1)
 
-        # Compute the gradient of the loss w.r.t. the scores
-        probabilities[y_i] -= 1
-        gradient = np.outer(probabilities, x_i)
+        # Compute the one-hot encoding of the true class
+        y_one_hot = np.zeros((np.size(self.W, 0), 1))
+        y_one_hot[y_i] = 1
 
-        # Add ℓ2 regularization term to the gradient
+        # Compute the label probabilities according to the model
+        label_probabilities = np.exp(label_scores) / np.sum(np.exp(label_scores))
+
+        # Compute the gradient of the loss w.r.t. the weights
+        gradient = (y_one_hot - label_probabilities).dot(np.expand_dims(x_i, axis = 1).T)
+
+        # Add L2 regularization to the gradient: lambda * W
         if l2_penalty > 0:
-            gradient += l2_penalty * self.W
+            gradient -= l2_penalty * self.W
 
-        # Update the weights
-        self.W -= learning_rate * gradient
-
-        # raise NotImplementedError # Q1.2 (a,b)
+        # Update the weights with regularization
+        self.W += learning_rate * gradient
 
 
 class MLP(object):
