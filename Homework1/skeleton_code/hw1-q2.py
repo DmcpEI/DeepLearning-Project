@@ -141,16 +141,16 @@ def train_batch(X, y, model, optimizer, criterion, **kwargs):
     loss as a numerical value that is not part of the computation graph.
     """
 
-    # Zero the gradients
+    # Clear the gradients
     optimizer.zero_grad()
 
-    # Forward pass
+    # Compute the model output
     logits = model(X)
 
     # Compute loss
     loss = criterion(logits, y)
 
-    # Backward pass
+    # Credit assignment
     loss.backward()
 
     # Update weights
@@ -296,6 +296,9 @@ def main():
     print('Training took {} minutes and {} seconds'.format(minutes, seconds))
 
     _, test_acc = evaluate(model, test_X, test_y, criterion)
+    final_val_acc = valid_accs[-1]  # Get the final validation accuracy
+
+    print('Final validation acc: {:.4f}'.format(final_val_acc))
     print('Final test acc: {:.4f}'.format(test_acc))
 
     # plot

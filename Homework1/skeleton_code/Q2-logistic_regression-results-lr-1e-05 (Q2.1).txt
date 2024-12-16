@@ -1,0 +1,3 @@
+Final val acc: 0.4466
+Final test acc: 0.4583
+Training time: 2 minutes and 1 seconds

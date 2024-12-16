@@ -93,8 +93,10 @@ class MLP(object):
     def __init__(self, n_classes, n_features, hidden_size):
         # Initialize weights and biases
 
+        # Hidden layer weights and biases
         self.W1 = np.random.normal(0.1, 0.1, (hidden_size, n_features))  # Input to hidden weights
         self.b1 = np.zeros(hidden_size)  # Hidden layer bias
+        # Output layer weights and biases
         self.W2 = np.random.normal(0.1, 0.1, (n_classes, hidden_size))  # Hidden to output weights
         self.b2 = np.zeros(n_classes)  # Output layer bias
 
@@ -158,7 +160,8 @@ class MLP(object):
             y_hat = self.softmax(z2)  # (n_classes,)
 
             # Compute loss (cross-entropy)
-            total_loss += -np.log(y_hat[y_i])
+            epsilon = 1e-6  # Small positive value to prevent log(0)
+            total_loss += -np.log(y_hat[y_i] + epsilon)
 
             # Backward pass
             # Gradients for output layer
@@ -301,10 +304,18 @@ def main():
     elapsed_time = time.time() - start
     minutes = int(elapsed_time // 60)
     seconds = int(elapsed_time % 60)
+
+    # Calculate final accuracies
+    final_train_acc = train_accs[-1]
+    final_val_acc = valid_accs[-1]
+
     print('Training took {} minutes and {} seconds'.format(minutes, seconds))
+    print('Final train acc: {:.4f} | Final val acc: {:.4f}'.format(
+        final_train_acc, final_val_acc
+    ))
     print('Final test acc: {:.4f}'.format(
         model.evaluate(test_X, test_y)
-        ))
+    ))
 
     # plot
     plot(epochs, train_accs, valid_accs, filename=f"Q1-{opt.model}-accs.pdf")
@@ -313,9 +324,10 @@ def main():
     elif opt.model == 'logistic_regression':
         plot_w_norm(epochs, weight_norms, filename=f"Q1-{opt.model}-w_norms.pdf")
     with open(f"Q1-{opt.model}-results.txt", "w") as f:
+        f.write(f"Final train acc: {final_train_acc}\n")
+        f.write(f"Final val acc: {final_val_acc}\n")
         f.write(f"Final test acc: {model.evaluate(test_X, test_y)}\n")
         f.write(f"Training time: {minutes} minutes and {seconds} seconds\n")
-
 
 if __name__ == '__main__':
     main()

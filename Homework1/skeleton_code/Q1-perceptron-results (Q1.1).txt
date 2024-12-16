@@ -1,2 +1,4 @@
+Final train acc: 0.5597783056215361
+Final val acc: 0.38675213675213677
 Final test acc: 0.37433333333333335
 Training time: 0 minutes and 33 seconds
