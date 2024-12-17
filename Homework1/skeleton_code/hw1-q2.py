@@ -73,8 +73,11 @@ class FeedforwardNetwork(nn.Module):
         attributes that each FeedforwardNetwork instance has. Note that nn
         includes modules for several activation functions and dropout as well.
         """
+
+        # Call the parent class constructor
         super().__init__()
-        self.layers = nn.ModuleList()  # Use ModuleList to store layers dynamically
+        # Use ModuleList to store layers dynamically
+        self.layers = nn.ModuleList()
 
         # Input layer
         self.layers.append(nn.Linear(n_features, hidden_size))
@@ -89,8 +92,6 @@ class FeedforwardNetwork(nn.Module):
         # Activation function
         if activation_type.lower() == "relu":
             self.activation = nn.ReLU()
-        elif activation_type.lower() == "sigmoid":
-            self.activation = nn.Sigmoid()
         elif activation_type.lower() == "tanh":
             self.activation = nn.Tanh()
         else:

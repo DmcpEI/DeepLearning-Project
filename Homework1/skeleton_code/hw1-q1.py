@@ -91,7 +91,7 @@ class LogisticRegression(LinearModel):
 
 class MLP(object):
     def __init__(self, n_classes, n_features, hidden_size):
-        # Initialize weights and biases
+        # Initialize an MLP with a single hidden layer.
 
         # Hidden layer weights and biases
         self.W1 = np.random.normal(0.1, 0.1, (hidden_size, n_features))  # Input to hidden weights
@@ -117,14 +117,15 @@ class MLP(object):
 
     def predict(self, X):
         # Compute the forward pass of the network. At prediction time, there is
+        # no need to save the values of hidden nodes.
 
         # Hidden layer
-        z1 = np.dot(X, self.W1.T) + self.b1  # (n_examples x hidden_size)
-        h1 = self.relu(z1)  # (n_examples x hidden_size)
+        z1 = np.dot(X, self.W1.T) + self.b1
+        h1 = self.relu(z1)
 
         # Output layer
-        z2 = np.dot(h1, self.W2.T) + self.b2  # (n_examples x n_classes)
-        y_hat = self.softmax(z2.T).T  # (n_examples x n_classes)
+        z2 = np.dot(h1, self.W2.T) + self.b2
+        y_hat = self.softmax(z2.T).T
 
         return np.argmax(y_hat, axis=1)  # Predicted class labels
 
@@ -150,14 +151,14 @@ class MLP(object):
         total_loss = 0
 
         for i in range(n_examples):
-            x_i = X[i]  # Single example (n_features,)
+            x_i = X[i]  # Single example
             y_i = y[i]  # Single label
 
             # Forward pass
-            z1 = np.dot(self.W1, x_i) + self.b1  # (hidden_size,)
-            h1 = self.relu(z1)  # (hidden_size,)
-            z2 = np.dot(self.W2, h1) + self.b2  # (n_classes,)
-            y_hat = self.softmax(z2)  # (n_classes,)
+            z1 = np.dot(self.W1, x_i) + self.b1
+            h1 = self.relu(z1)
+            z2 = np.dot(self.W2, h1) + self.b2
+            y_hat = self.softmax(z2)
 
             # Compute loss (cross-entropy)
             epsilon = 1e-6  # Small positive value to prevent log(0)
@@ -167,14 +168,14 @@ class MLP(object):
             # Gradients for output layer
             dz2 = y_hat
             dz2[y_i] -= 1  # Subtract 1 from the true class probability
-            dW2 = np.outer(dz2, h1)  # (n_classes x hidden_size)
-            db2 = dz2  # (n_classes,)
+            dW2 = np.outer(dz2, h1)
+            db2 = dz2
 
             # Gradients for hidden layer
-            dh1 = np.dot(self.W2.T, dz2)  # (hidden_size,)
-            dz1 = dh1 * self.relu_derivative(z1)  # (hidden_size,)
-            dW1 = np.outer(dz1, x_i)  # (hidden_size x n_features)
-            db1 = dz1  # (hidden_size,)
+            dh1 = np.dot(self.W2.T, dz2)
+            dz1 = dh1 * self.relu_derivative(z1)
+            dW1 = np.outer(dz1, x_i)
+            db1 = dz1
 
             # Update weights and biases
             self.W1 -= learning_rate * dW1
