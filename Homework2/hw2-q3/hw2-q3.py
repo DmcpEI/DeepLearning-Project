@@ -8,6 +8,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
+import torch.nn.functional as F
 
 import matplotlib.pyplot as plt
 
@@ -224,14 +225,28 @@ def nucleus_sampling(logits, p=0.8):
         next_token: index of the next predicted token. Shape: (1,)
     """
     # TODO: Top-p (nucleus) sampling  (https://arxiv.org/pdf/1904.09751 - Section 3.1)
-    # You are asked to implement the following steps:
-    # 1. Transform the given logits into probabilities.
-    # 2. Select the smallest set of tokens whose cumulative probability mass exceeds p.
-    # This is equivalent to selecting the tokens with highest probabilities, whose cumulative probability mass equals or exceeds p.
-    # 3. Rescale the distribution and sample from the resulting set of tokens.
-    # Implementation of the steps as described above:
+    # Step 1: Convert logits to probabilities
+    probs = F.softmax(logits, dim=-1)  # (vocab_size,)
 
-    raise NotImplementedError("Add your implementation.")
+    # Step 2: Sort token probabilities in descending order
+    sorted_probs, sorted_indices = torch.sort(probs, descending=True)  # Both (vocab_size,)
+
+    # Step 3: Compute cumulative probabilities
+    cumulative_probs = torch.cumsum(sorted_probs, dim=0)  # (vocab_size,)
+
+    # Step 4: Find the smallest set of tokens whose cumulative probability exceeds p
+    threshold_index = torch.searchsorted(cumulative_probs, p) + 1  # Get first index where cumulative probability > p
+    top_p_probs = sorted_probs[:threshold_index]  # Keep only the selected tokens
+    top_p_indices = sorted_indices[:threshold_index]  # Keep their indices
+
+    # Step 5: Normalize probabilities within the selected subset
+    top_p_probs /= top_p_probs.sum()  # Re-normalize so they sum to 1
+
+    # Step 6: Sample from the top-p subset
+    next_token = torch.multinomial(top_p_probs, 1)  # (1,)
+    sampled_index = top_p_indices[next_token]  # Convert to original token index
+
+    return sampled_index
 
 
 def main(args):

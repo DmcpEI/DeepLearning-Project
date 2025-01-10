@@ -24,22 +24,35 @@ class ConvBlock(nn.Module):
             maxpool=True,
             batch_norm=True,
             dropout=0.0
-        ):
+    ):
         super().__init__()
+        # Q2.1. Initialize convolution, maxpool, activation and dropout layers
+        self.conv = nn.Conv2d(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
+            padding=padding,
+            bias=True
+        )
+        self.maxpool = nn.MaxPool2d(kernel_size=2, stride=2) if maxpool else None
+        self.dropout = nn.Dropout(dropout)
 
-        # Q2.1. Initialize convolution, maxpool, activation and dropout layers 
-        
-        
-        # Q2.2 Initialize batchnorm layer 
-        
-        raise NotImplementedError
+        # Q2.2 Initialize batchnorm layer
+        self.batch_norm = nn.BatchNorm2d(out_channels) if batch_norm else None
 
     def forward(self, x):
         # input for convolution is [b, c, w, h]
-        
-        # Implement execution of layers in right order
 
-        raise NotImplementedError
+        # Implement execution of layers in right order
+        x = self.conv(x)
+        if self.batch_norm:
+            x = self.batch_norm(x)
+        x = F.relu(x)
+        if self.maxpool:
+            x = self.maxpool(x)
+        x = self.dropout(x)
+
+        return x
 
 
 class CNN(nn.Module):
@@ -52,25 +65,42 @@ class CNN(nn.Module):
         self.batch_norm = batch_norm
 
         # Initialize convolutional blocks
-        
-        # Initialize layers for the MLP block
+        self.conv1 = ConvBlock(channels[0], channels[1], kernel_size=3, padding=1, maxpool=self.maxpool,
+                               batch_norm=self.batch_norm, dropout=dropout_prob)
+        self.conv2 = ConvBlock(channels[1], channels[2], kernel_size=3, padding=1, maxpool=self.maxpool,
+                               batch_norm=self.batch_norm, dropout=dropout_prob)
+        self.conv3 = ConvBlock(channels[2], channels[3], kernel_size=3, padding=1, maxpool=self.maxpool,
+                               batch_norm=self.batch_norm, dropout=dropout_prob)
+
         # For Q2.2 initalize batch normalization
-        
+        self.global_avg_pool = nn.AdaptiveAvgPool2d(1)
+
+        # Initialize layers for the MLP block
+        self.fc1 = nn.Linear(channels[-1], fc1_out_dim)
+        self.fc2 = nn.Linear(fc1_out_dim, fc2_out_dim)
+        self.fc3 = nn.Linear(fc2_out_dim, 6)
+
+        self.dropout = nn.Dropout(dropout_prob)
 
     def forward(self, x):
         x = x.reshape(x.shape[0], 3, 48, -1)
 
-        # Implement execution of convolutional blocks 
-        
+        # Implement execution of convolutional blocks
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.conv3(x)
         # Flattent output of the last conv block
-        
+        x = self.global_avg_pool(x)
+        x = torch.flatten(x, start_dim=1)
         # Implement MLP part
-        
-        # For Q2.2 implement global averag pooling
-        
+        x = F.relu(self.fc1(x))
+        x = self.dropout(x)
+        x = F.relu(self.fc2(x))
+        x = self.dropout(x)
+        x = self.fc3(x)
 
         return F.log_softmax(x, dim=1)
- 
+
 
 def train_batch(X, y, model, optimizer, criterion, **kwargs):
     """
@@ -115,7 +145,7 @@ def evaluate(model, X, y, criterion=None):
 
 
 def plot(epochs, plottable, ylabel='', name=''):
-    plt.figure()#plt.clf()
+    plt.figure()  # plt.clf()
     plt.xlabel('Epoch')
     plt.ylabel(ylabel)
     plt.plot(epochs, plottable)
@@ -123,7 +153,8 @@ def plot(epochs, plottable, ylabel='', name=''):
 
 
 def get_number_trainable_params(model):
-    raise NotImplementedError
+    """Compute the number of trainable parameters in the model."""
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
 def plot_file_name_sufix(opt, exlude):
@@ -150,7 +181,7 @@ def main():
                         choices=['sgd', 'adam'], default='sgd')
     parser.add_argument('-no_maxpool', action='store_true')
     parser.add_argument('-no_batch_norm', action='store_true')
-    parser.add_argument('-data_path', type=str, default='./data/intel_landscapes.npz',)
+    parser.add_argument('-data_path', type=str, default='./data/intel_landscapes.npz', )
     parser.add_argument('-device', choices=['cpu', 'cuda', 'mps'], default='cpu')
 
     opt = parser.parse_args()
@@ -219,6 +250,7 @@ def main():
     plot(epochs, valid_accs, ylabel='Accuracy', name='CNN-3-valid-accuracy-{}-{}'.format(sufix, test_acc_str))
 
     print('Number of trainable parameters: ', get_number_trainable_params(model))
+
 
 if __name__ == '__main__':
     main()
